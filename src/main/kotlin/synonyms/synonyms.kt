@@ -9,111 +9,128 @@ import kotlin.collections.HashSet
 const val SYN = "synonyms"
 const val DIFF = "different"
 
-fun synonyms(dictionary: List<Pair<String, String>>, inputs: List<Pair<String, String>>): List<String> {
-    val dicMap = createDictionary(dictionary)
-    val ret = mutableListOf<String>()
-    for (i in inputs.indices) {
-        if (isSynonym(dicMap, inputs[i])) {
-            ret.add(SYN)
-        } else {
-            ret.add(DIFF)
+object Solution1 {
+    fun synonyms(dictionary: List<Pair<String, String>>, inputs: List<Pair<String, String>>): List<String> {
+        val dicMap = createDictionary(dictionary)
+        val ret = mutableListOf<String>()
+        for (i in inputs.indices) {
+            if (isSynonym(dicMap, inputs[i])) {
+                ret.add(SYN)
+            } else {
+                ret.add(DIFF)
+            }
+        }
+        return ret
+    }
+
+
+    fun createDictionary(input: List<Pair<String, String>>): Map<String, Set<String>> {
+        val dict = mutableMapOf<String, MutableSet<String>>()
+        input.forEach { (key, value) ->
+            val keyDict = dict.getOrPut(key) { mutableSetOf() }.apply { add(value) }
+            val valDict = dict.getOrPut(value) { mutableSetOf() }.apply { add(key) }
+            if (keyDict != valDict) {
+                if (keyDict.count() < valDict.count()) {
+                    mergeSet(dict, keyDict, valDict)
+                    dict[key] = valDict
+                } else {
+                    mergeSet(dict, valDict, keyDict)
+                    dict[value] = keyDict
+                }
+            }
+        }
+        return dict
+    }
+
+    fun mergeSet(dict: MutableMap<String, MutableSet<String>>, from: MutableSet<String>, to: MutableSet<String>) {
+        to.addAll(from)
+        from.forEach {
+            dict[it] = to
         }
     }
-    return ret
-}
 
-fun synonyms2(dictionary: List<Pair<String, String>>, inputs: List<Pair<String, String>>): List<String> {
-    val createdDict = buildDictionary(dictionary)
-    val result = mutableListOf<String>()
-    for (pair in inputs) {
-        if (isSyns(pair, createdDict)) {
-            result.add(SYN)
-        } else {
-            result.add(DIFF)
-        }
+    fun isSynonym(dict: Map<String, Set<String>>, testData: Pair<String, String>): Boolean {
+        if (testData.first == testData.second) return true
+        return dict[testData.first]?.contains(testData.second) == true
     }
-    return result
 }
 
-fun isSyns(pair: Pair<String, String>, dictionary: List<HashSet<String>>): Boolean {
-    val set = hashSetOf<String>(pair.first, pair.second)
-    for (syns in dictionary) {
-        if (syns.intersect(set).isNotEmpty()) {
+object Solution2 {
+
+    fun synonyms(dictionary: List<Pair<String, String>>, inputs: List<Pair<String, String>>): List<String> {
+        val createdDict = buildDictionary(dictionary)
+        val results = mutableListOf<String>()
+        for (pair in inputs) {
+            results.add(if (isSyns(pair, createdDict)) SYN else DIFF)
+        }
+        return results
+    }
+
+    fun isSyns(pair: Pair<String, String>, dictionary: List<HashSet<String>>): Boolean {
+        if (pair.first == pair.second) {
             return true
         }
-    }
-    return false
-}
-
-fun buildDictionary(input: List<Pair<String, String>>): List<HashSet<String>> {
-    val dictList = input.map { (first, second) -> hashSetOf(first, second) }
-    val stackDict = Stack<HashSet<String>>().apply {
-        dictList.forEach { push(it) }
-    }
-    var current = stackDict.pop()
-    var finalDict = mutableListOf<HashSet<String>>()
-    while (stackDict.isNotEmpty()) {
-        val tempList = Stack<HashSet<String>>()
-        while (stackDict.isNotEmpty() && current.intersect(stackDict.peek()).isEmpty()) {
-            tempList.push(stackDict.pop())
+        for (syns in dictionary) {
+            if (syns.contains(pair.first) && syns.contains(pair.second)) {
+                return true
+            }
         }
-        if (stackDict.isNotEmpty()) {
+        return false
+    }
+
+    fun Stack<HashSet<String>>.printlnOut() {
+        val temp = Stack<HashSet<String>>()
+        while (this.isNotEmpty()) {
+            val current = this.pop()
+            temp.push(current)
             println(current.joinToString(", "))
-            println(stackDict.peek().joinToString(", "))
-            println("----")
-            current.addAll(stackDict.pop())
-            while (tempList.isNotEmpty()) {
-                stackDict.push(tempList.pop())
-            }
-        } else {
-            while (tempList.isNotEmpty()) {
-                stackDict.push(tempList.pop())
-            }
-            finalDict.add(current)
-            current = stackDict.pop()
+        }
+        while (temp.isNotEmpty()) {
+            this.push(temp.pop())
         }
     }
-//    finalDict.forEach { println(it.joinToString(", ")) }
-    return finalDict
-}
 
-fun createDictionary(input: List<Pair<String, String>>): Map<String, Set<String>> {
-    val dict = mutableMapOf<String, MutableSet<String>>()
-    input.forEach { (key, value) ->
-        val keyDict = dict.getOrPut(key) { mutableSetOf() }.apply { add(value) }
-        val valDict = dict.getOrPut(value) { mutableSetOf() }.apply { add(key) }
-        if (keyDict != valDict) {
-            if (keyDict.count() < valDict.count()) {
-                mergeSet(dict, keyDict, valDict)
-                dict[key] = valDict
+    fun buildDictionary(input: List<Pair<String, String>>): List<HashSet<String>> {
+        val dictList =
+            input.filter { (first, second) -> first != second }.map { (first, second) -> hashSetOf(first, second) }
+        val stackDict = Stack<HashSet<String>>().apply {
+            dictList.forEach { push(it) }
+        }
+        var current = stackDict.peek()
+        val finalDict = mutableListOf<HashSet<String>>()
+        while (stackDict.isNotEmpty()) {
+            val tempList = Stack<HashSet<String>>()
+            while (stackDict.isNotEmpty() && current.intersect(stackDict.peek()).isEmpty()) {
+                tempList.push(stackDict.pop())
+            }
+            if (stackDict.isNotEmpty()) {
+                current.addAll(stackDict.pop())
+                while (tempList.isNotEmpty()) {
+                    stackDict.push(tempList.pop())
+                }
+                if (stackDict.isEmpty()) {
+                    finalDict.add(current)
+                }
             } else {
-                mergeSet(dict, valDict, keyDict)
-                dict[value] = keyDict
+                while (tempList.isNotEmpty()) {
+                    stackDict.push(tempList.pop())
+                }
+                finalDict.add(current)
+                current = stackDict.peek()
             }
         }
-    }
-    return dict
-}
-
-fun mergeSet(dict: MutableMap<String, MutableSet<String>>, from: MutableSet<String>, to: MutableSet<String>) {
-    to.addAll(from)
-    from.forEach {
-        dict[it] = to
+        return finalDict
     }
 }
 
-fun isSynonym(dict: Map<String, Set<String>>, testData: Pair<String, String>): Boolean {
-    if (testData.first == testData.second) return true
-    return dict[testData.first]?.contains(testData.second) == true
-}
 
 fun main() {
-    val fileData = loadDataFromFile("example_big.in")
+    val fileData = loadDataFromFile("testcase/vancuum_round1/test.in")
     val testcases = readTestCase(fileData)
     val results = testcases
-        .flatMap { synonyms2(it.dictionaries, it.data) }
+        .flatMap { Solution2.synonyms(it.dictionaries, it.data) }
 
-    BufferedWriter(FileWriter("testOut.txt")).use { it.write(results.joinToString("\n")) }
+    BufferedWriter(FileWriter("testcase/vancuum_round1/testOut.txt")).use { it.write(results.joinToString("\n")) }
 }
 
 private fun readTestCase(lineList: MutableList<String>): MutableList<TestCaseModel> {
