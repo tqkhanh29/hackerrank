@@ -1,3 +1,5 @@
+import linetest.findNumbers
+import linetest.fizzbuzz
 import minMoves.minMoves
 import minmaxriddle.riddle
 import java.io.File
@@ -39,5 +41,6 @@ fun riddle2(arr: Array<Long>): Array<Long> {
 }
 
 fun main() {
-    println("min move is ${minMoves(arrayOf(1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1))}")
+    val sums = findNumbers(intArrayOf(2, 3, 9, 8, 11, 15, 4), 9)
+    println(sums.joinToString(", "))
 }
